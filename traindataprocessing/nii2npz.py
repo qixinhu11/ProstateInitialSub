@@ -153,7 +153,6 @@ def cls_processing(aligned_root, preprocessing_root):
         for modality in ["T2W", "ADC", "DWI"]:
             sample[modality] = os.path.join(aligned_root, name, f'{name}_{modality}.nii.gz')
         datalist.append(sample)
-        break
     preprocessing_cls(preprocessing_root, datalist)
 
 # segmentation preprocessing
