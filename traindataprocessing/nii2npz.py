@@ -177,12 +177,12 @@ def get_single_case(aligned_root, name):
     t2w = normalize(t2w)
     t2w = np.transpose(t2w, (1, 2, 0))
 
-    dwi = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_dwi.nii.gz"))
+    dwi = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_DWI.nii.gz"))
     dwi = sitk.GetArrayFromImage(dwi)
     dwi = normalize(dwi)
     dwi = np.transpose(dwi, (1, 2, 0))
 
-    adc = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_adc.nii.gz"))
+    adc = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_ADC.nii.gz"))
     adc = sitk.GetArrayFromImage(adc)
     adc = normalize(adc)
     adc = np.transpose(adc, (1, 2, 0))
