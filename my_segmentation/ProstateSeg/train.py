@@ -111,10 +111,10 @@ def _get_loader(args):
         ]
     )
 
-    train_ds = prostateSeg(npz_files=train_samples, modality=args.modality, img_transforms=train_img_transform, seg_transforms=train_seg_transform)
+    train_ds = prostateSeg(npz_files=train_samples[:4], modality=args.modality, img_transforms=train_img_transform, seg_transforms=train_seg_transform)
     train_loader = DataLoader(train_ds, batch_size=4, shuffle=True,num_workers=0, pin_memory=True)
 
-    test_ds = prostateSeg(npz_files=test_samples, modality=args.modality, img_transforms=val_img_transform, seg_transforms=val_seg_transform)
+    test_ds = prostateSeg(npz_files=test_samples[:2], modality=args.modality, img_transforms=val_img_transform, seg_transforms=val_seg_transform)
     test_loader = DataLoader(test_ds, batch_size=1, shuffle=False,num_workers=0, pin_memory=True)
 
     return train_loader, test_loader

@@ -104,22 +104,22 @@ def _get_models(args):
         model = monai.networks.nets.DenseNet169(spatial_dims=3, in_channels=1, out_channels=args.num_cls)
     elif 'efficientnet' in args.model_name:
         model = monai.networks.nets.EfficientNetBN(model_name=args.model_name, spatial_dims=3, in_channels=1, out_channels=args.num_cls)
-    elif args.model_name == 'vit':
-        from vit_pytorch.vit_3d import ViT
-        model = ViT(
-            image_size = args.resize_x,          # image size
-            frames = args.resize_z,               # number of frames
-            channels=1,
-            image_patch_size = 16,     # image patch size
-            frame_patch_size = 16,      # frame patch size
-            num_classes = args.num_cls,
-            dim = 1024,
-            depth = 6,
-            heads = 8,
-            mlp_dim = 2048,
-            dropout = 0.1,
-            emb_dropout = 0.1
-        )
+    # elif args.model_name == 'vit':
+    #     from vit_pytorch.vit_3d import ViT
+    #     model = ViT(
+    #         image_size = args.resize_x,          # image size
+    #         frames = args.resize_z,               # number of frames
+    #         channels=1,
+    #         image_patch_size = 16,     # image patch size
+    #         frame_patch_size = 16,      # frame patch size
+    #         num_classes = args.num_cls,
+    #         dim = 1024,
+    #         depth = 6,
+    #         heads = 8,
+    #         mlp_dim = 2048,
+    #         dropout = 0.1,
+    #         emb_dropout = 0.1
+    #     )
     elif 'resnet' in args.model_name:
         from models.resnet import generate_model
         n_classes = args.num_cls

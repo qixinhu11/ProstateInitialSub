@@ -25,6 +25,39 @@ def _get_data_loader(modality):
     return test_loader
 
 
+def _get_val_loader(args):
+    file_root = args.file_root
+    labels_dict = np.load(os.path.join(file_root,"case_level_label.npz"), allow_pickle=True)['label'].item()
+    val_samples = []
+    with open(os.path.join(file_root,'test_case_level.txt'), 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            sample = line.strip()
+            val_samples.append(sample)
+        
+    val_images = []
+    val_labels = []
+    for sample in val_samples:
+        val_images.append(os.path.join(file_root, args.modality, sample + '.npz'))
+        val_labels.append(labels_dict[sample])
+    val_labels = np.array(val_labels, dtype=float)
+    val_labels = torch.FloatTensor(val_labels)  
+
+
+    val_img_transform = transforms.Compose(
+        [
+            transforms.EnsureChannelFirst(channel_dim="no_channel"),
+            # transforms.Resize(spatial_size=(x, y, z), mode="area"),
+        ]
+    )
+
+    
+    val_ds = prostateDataset(npz_files=val_images, labels=val_labels, img_transforms=val_img_transform, seg_transforms=None)
+    val_loader = DataLoader(val_ds, batch_size=1, shuffle=False,num_workers=0, pin_memory=True)
+
+    return val_loader
+
+
 def test_one_model(model, test_loader):
     model.eval()
     name_list = []
