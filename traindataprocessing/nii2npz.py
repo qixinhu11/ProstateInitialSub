@@ -223,17 +223,17 @@ def seg_processing(aligned_root, preprocessing_root):
     shutil.copy2('./test_case_level.txt', os.path.join(preprocessing_root, "test_case_level.txt"))
     shutil.copy2('./train_case_level.txt', os.path.join(preprocessing_root, "train_case_level.txt"))
     shutil.copy2('./case_level_label.npz', os.path.join(preprocessing_root, "case_level_label.npz"))
-    print("="*20, end='\t')
-    print("Start to do pre-processing for segmentation")
     name_list = os.listdir(aligned_root)
-
-    for name in name_list:
+    print("="*20, end='\t')
+    print("Start to do pre-processing for segmentation, total of {} cases.".format(len(name_list)))
+    
+    for idx, name in enumerate(name_list):
         zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt = get_single_case(aligned_root, name)
         img = np.stack([zoom_t2w, zoom_dwi, zoom_adc], axis=0)
         mask = np.stack([zoom_t2w_gt, zoom_dwi_gt, zoom_adc_gt], axis=0)
 
         np.savez(os.path.join(preprocessing_root, name), img=img, mask=mask)
-        print(name, img.shape, mask.shape, 'done')
+        print(f"{idx+1}/{len(name_list)} ||", name, img.shape, mask.shape, 'done')
 
 
 
@@ -247,5 +247,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    cls_processing(args.tingting_save_path, args.qixin_save_path)
+    # cls_processing(args.tingting_save_path, args.qixin_save_path)
     seg_processing(args.tingting_save_path, args.qixin_save_path)
