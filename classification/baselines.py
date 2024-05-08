@@ -12,7 +12,7 @@ from optimizers.lr_scheduler import WarmupCosineSchedule,LinearWarmupCosineAnnea
 
 
 def _get_data_loader(args):
-    file_root = "/home/qixinhu/Projects/Prostate/preprocess"
+    file_root = args.file_root
     labels_dict = np.load(os.path.join(file_root,"case_level_label.npz"), allow_pickle=True)['label'].item()
     train_samples = []
     with open(os.path.join(file_root,'train_case_level.txt'), 'r') as f:
@@ -151,6 +151,7 @@ def main():
     parser.add_argument('--num_cls', default=2, type=int)
     
     # saving parameters
+    parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
     parser.add_argument('--log_dir', default="runs", type=str)
     parser.add_argument('--modality', default="T2W", type=str)
 
