@@ -188,7 +188,7 @@ def main(args):
     args.device = device
     model = _get_model(args)
     model.to(device)
-
+    print("The model is now on the CUDA: ", next(model.parameters()).is_cuda)
     torch.backends.cudnn.benchmark = True
     loss_function = DiceCELoss(to_onehot_y=True,sigmoid=True)
     
