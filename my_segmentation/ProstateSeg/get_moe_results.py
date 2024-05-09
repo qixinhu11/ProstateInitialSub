@@ -85,13 +85,13 @@ def get_dice(args):
         list_123.append(dice_123)
         list_0123.append(dice_0123)
         
-        print(item, dice_01, dice_02, dice_03, dice_12, dice_13, dice_23, dice_012, dice_013, dice_123, dice_0123)
+        print(item + "||" + dice_self, dice_01, dice_02, dice_03, dice_12, dice_13, dice_23, dice_012, dice_013, dice_123, dice_0123)
     print("{:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f}".format(
         np.mean(list_01), np.mean(list_02), np.mean(list_03), np.mean(list_12), np.mean(list_13),
         np.mean(list_23), np.mean(list_012), np.mean(list_013), np.mean(list_123) ,np.mean(list_0123)
     ))
     print("No MoE:", np.mean(list_self))
-    
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
