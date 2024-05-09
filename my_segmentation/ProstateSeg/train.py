@@ -46,14 +46,17 @@ def _get_model(args):
     else:
         in_channels=3
 
-    model = SegResNet(
-        blocks_down=[1, 2, 2, 4],
-        blocks_up=[1, 1, 1],
-        init_filters=16,
-        in_channels=in_channels,
-        out_channels=2,
-        dropout_prob=0.2,
-    )
+    if args.model_name == "unet":
+        model = UNet3D(in_channel=in_channels, n_class=2)
+    else:
+        model = SegResNet(
+            blocks_down=[1, 2, 2, 4],
+            blocks_up=[1, 1, 1],
+            init_filters=16,
+            in_channels=in_channels,
+            out_channels=2,
+            dropout_prob=0.2,
+        )
 
     return model
 
@@ -240,6 +243,8 @@ if __name__ == "__main__":
 
     # new args
     parser.add_argument('--modality', default=0, type=int)
+    parser.add_argument('--model_name', default=None, type=str)
+
     parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
     parser.add_argument('--x', default=128, type=int)
     parser.add_argument('--y', default=128, type=int)
@@ -247,7 +252,10 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    args.root_dir = 'out/' + f'BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
+    if args.model_name:
+        args.root_dir = 'out/' + f'{args.model_name}_BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
+    else:
+        args.root_dir = 'out/' + f'BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
     args.epoch = 0
 
     print("MAIN Argument values:")
