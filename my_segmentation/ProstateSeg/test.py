@@ -30,7 +30,7 @@ def _get_model(args):
         dropout_prob=0.2,
     )
     # load the model
-    model_path = f"out/BS1_LR0.0001_MOD{args.modality}/last_model.pth"
+    model_path = f"out/BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
     model.load_state_dict(torch.load(model_path)['net'])
     model.to(args.device)
     return model
@@ -92,6 +92,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--modality', default=3, type=int)
+    parser.add_argument('--epoch', default=1000, type=int)
     parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
