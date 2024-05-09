@@ -21,20 +21,24 @@ def _get_model(args):
     else:
         in_channels=3
 
-    model = SegResNet(
-        blocks_down=[1, 2, 2, 4],
-        blocks_up=[1, 1, 1],
-        init_filters=16,
-        in_channels=in_channels,
-        out_channels=2,
-        dropout_prob=0.2,
-    )
-    # load the model
-    model_path = f"out/BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
+    if args.model_name == "unet":
+        model = UNet3D(in_channel=in_channels, n_class=2)
+        model_path = f"out/{args.model_name}_BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
+    else:
+        model = SegResNet(
+            blocks_down=[1, 2, 2, 4],
+            blocks_up=[1, 1, 1],
+            init_filters=16,
+            in_channels=in_channels,
+            out_channels=2,
+            dropout_prob=0.2,
+        )
+        model_path = f"out/BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
     model.load_state_dict(torch.load(model_path)['net'])
     model.to(args.device)
     return model
-
+    
+    return model
 def _get_loader(args):
     file_root = args.file_root
     test_samples = []
@@ -93,6 +97,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--modality', default=3, type=int)
     parser.add_argument('--epoch', default=1000, type=int)
+    parser.add_argument('--model_name', default=None, type=str)
     parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
