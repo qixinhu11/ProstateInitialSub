@@ -23,6 +23,7 @@ def get_dice(args):
             line = line.strip()
             test_list.append(line)
 
+    list_self = []
     list_01 = []
     list_02 = []
     list_03 = []
@@ -41,7 +42,13 @@ def get_dice(args):
 
         # pred = ((pred1) > 0).astype(np.float32) # 224*224*30
         label = np.load(os.path.join(label_root, item+'.npz'))['mask'][args.modality,...].astype(np.float32) # 224*224*30
-
+        if args.modality == 0:
+            pred_self = pred0 
+        elif args.modality == 1:
+            pred_self = pred1 
+        elif args.modality == 2:
+            pred_self = pred2
+        
         pred_01 =  ((pred0 + pred1) > 0).astype(np.float32)
         pred_02 =  ((pred0 + pred2) > 0).astype(np.float32)
         pred_03 =  ((pred0 + pred3) > 0).astype(np.float32)
@@ -53,6 +60,8 @@ def get_dice(args):
         pred_123 = ((pred1 + pred2 + pred3) > 0).astype(np.float32)
         pred_0123 = ((pred0 + pred1 + pred2 + pred3) > 0).astype(np.float32)
 
+
+        dice_self = cal_dice(pred_self, label)
         dice_01 = cal_dice(pred_01, label)
         dice_02 = cal_dice(pred_02, label)
         dice_03 = cal_dice(pred_03, label)
@@ -64,6 +73,7 @@ def get_dice(args):
         dice_123 = cal_dice(pred_123, label)
         dice_0123 = cal_dice(pred_0123, label)
 
+        list_self.append(dice_self)
         list_01.append(dice_01)
         list_02.append(dice_02)
         list_03.append(dice_03)
@@ -80,7 +90,8 @@ def get_dice(args):
         np.mean(list_01), np.mean(list_02), np.mean(list_03), np.mean(list_12), np.mean(list_13),
         np.mean(list_23), np.mean(list_012), np.mean(list_013), np.mean(list_123) ,np.mean(list_0123)
     ))
-
+    print("No MoE:", np.mean(list_self))
+    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
