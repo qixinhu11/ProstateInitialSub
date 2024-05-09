@@ -51,7 +51,7 @@ def get_dice(args):
         pred_012 = ((pred0 + pred1 + pred2) > 0).astype(np.float32)
         pred_013 = ((pred0 + pred1 + pred3) > 0).astype(np.float32)
         pred_123 = ((pred1 + pred2 + pred3) > 0).astype(np.float32)
-        pred_0123 = ((pred0, pred1 + pred2 + pred3) > 0).astype(np.float32)
+        pred_0123 = ((pred0 + pred1 + pred2 + pred3) > 0).astype(np.float32)
 
         dice_01 = cal_dice(pred_01, label)
         dice_02 = cal_dice(pred_02, label)
