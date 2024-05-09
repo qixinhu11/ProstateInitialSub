@@ -184,8 +184,7 @@ def main(args):
 
     # build the model
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device('cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.device = device
     model = _get_model(args)
     model.to(device)

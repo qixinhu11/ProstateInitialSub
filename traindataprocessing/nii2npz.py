@@ -211,9 +211,9 @@ def get_single_case(aligned_root, name):
     zoom_adc = ndimage.zoom(adc, zoom=(resize_x/x, resize_y/y, resize_z/z))
     zoom_dwi = ndimage.zoom(dwi, zoom=(resize_x/x, resize_y/y, resize_z/z))
 
-    zoom_t2w_gt = ndimage.zoom(t2w_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest")
-    zoom_adc_gt = ndimage.zoom(adc_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest")
-    zoom_dwi_gt = ndimage.zoom(dwi_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest")
+    zoom_t2w_gt = ndimage.zoom(t2w_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
+    zoom_adc_gt = ndimage.zoom(adc_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
+    zoom_dwi_gt = ndimage.zoom(dwi_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
 
     return zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt
 
