@@ -23,19 +23,63 @@ def get_dice(args):
             line = line.strip()
             test_list.append(line)
 
-    dice_list = []
+    list_01 = []
+    list_02 = []
+    list_03 = []
+    list_12 = []
+    list_13 = []
+    list_23 = []
+    list_012 = []
+    list_013 = []
+    list_123 = []
+    list_0123 = []
     for item in test_list:
         pred0 = np.load(os.path.join(pred_root0, item+'.npz'))['pred'] # 224*224*30
         pred1 = np.load(os.path.join(pred_root1, item+'.npz'))['pred'] # 224*224*30
         pred2 = np.load(os.path.join(pred_root2, item+'.npz'))['pred'] # 224*224*30
         pred3 = np.load(os.path.join(pred_root3, item+'.npz'))['pred'] # 224*224*30
-        pred = ((pred1) > 0).astype(np.float32) # 224*224*30
+
+        # pred = ((pred1) > 0).astype(np.float32) # 224*224*30
         label = np.load(os.path.join(label_root, item+'.npz'))['mask'][args.modality,...].astype(np.float32) # 224*224*30
 
-        current_dice = cal_dice(pred, label)
-        dice_list.append(current_dice)
-        print(item, current_dice)
-    print(np.mean(dice_list))
+        pred_01 =  ((pred0 + pred1) > 0).astype(np.float32)
+        pred_02 =  ((pred0 + pred2) > 0).astype(np.float32)
+        pred_03 =  ((pred0 + pred3) > 0).astype(np.float32)
+        pred_13 =  ((pred1 + pred3) > 0).astype(np.float32)
+        pred_23 =  ((pred2 + pred3) > 0).astype(np.float32)
+        pred_12 =  ((pred1 + pred2) > 0).astype(np.float32)
+        pred_012 = ((pred0 + pred1 + pred2) > 0).astype(np.float32)
+        pred_013 = ((pred0 + pred1 + pred3) > 0).astype(np.float32)
+        pred_123 = ((pred1 + pred2 + pred3) > 0).astype(np.float32)
+        pred_0123 = ((pred0, pred1 + pred2 + pred3) > 0).astype(np.float32)
+
+        dice_01 = cal_dice(pred_01, label)
+        dice_02 = cal_dice(pred_02, label)
+        dice_03 = cal_dice(pred_03, label)
+        dice_12 = cal_dice(pred_12, label)
+        dice_13 = cal_dice(pred_13, label)
+        dice_23 = cal_dice(pred_23, label)
+        dice_012 = cal_dice(pred_012, label)
+        dice_013 = cal_dice(pred_013, label)
+        dice_123 = cal_dice(pred_123, label)
+        dice_0123 = cal_dice(pred_0123, label)
+
+        list_01.append(dice_01)
+        list_02.append(dice_02)
+        list_03.append(dice_03)
+        list_12.append(dice_12)
+        list_13.append(dice_13)
+        list_23.append(dice_23)
+        list_012.append(dice_012)
+        list_013.append(dice_013)
+        list_123.append(dice_123)
+        list_0123.append(dice_0123)
+        
+        print(item, dice_01, dice_02, dice_03, dice_12, dice_13, dice_23, dice_012, dice_013, dice_123, dice_0123)
+    print("{:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f} || {:.3f}".format(
+        np.mean(list_01), np.mean(list_02), np.mean(list_03), np.mean(list_12), np.mean(list_13),
+        np.mean(list_23), np.mean(list_012), np.mean(list_013), np.mean(list_123) ,np.mean(list_0123)
+    ))
 
 if __name__ == "__main__":
     import argparse
