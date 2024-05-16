@@ -174,9 +174,27 @@ class UnetEncoder(nn.Module):
 
         return (skip_out64, skip_out128, skip_out256, out512)       
 
-class GatedFusionSeg(nn.Module):
+
+class UnetDecoder(nn.Module):
+    def __init__(self, n_class=2, act='relu') -> None:
+        super(UnetDecoder, self).__init__()
+        self.up_tr256 = UpTransition(512, 512,2,act)
+        self.up_tr128 = UpTransition(256,256, 1,act)
+        self.up_tr64 = UpTransition(128,128,0,act)
+        # output layer
+        self.final_conv = nn.Conv3d(64, n_class, kernel_size=1)
+
+    def forward(self, out512, skip_out256, skip_out128, skip_out64):
+        out_up_256 = self.up_tr256(out512, skip_out256)
+        out_up_128 = self.up_tr128(out_up_256, skip_out128)
+        out_up_64  = self.up_tr64(out_up_128, skip_out64)
+        out = self.final_conv(out_up_64)
+        return out
+
+        
+class MoESeg(nn.Module):
     def __init__(self, n_class=2, act='relu'):
-        super(GatedFusionSeg, self).__init__()
+        super(MoESeg, self).__init__()
 
         # encoder net
         self.encoder_t2w = UnetEncoder()
@@ -187,48 +205,68 @@ class GatedFusionSeg(nn.Module):
         self.crossattfusion = CrossAttentionFusionModule(input_channels=512)
 
         # decoder net
-        self.up_tr256 = UpTransition(512, 512,2,act)
-        self.up_tr128 = UpTransition(256,256, 1,act)
-        self.up_tr64 = UpTransition(128,128,0,act)
+        self.decoder_t2w = UnetDecoder(n_class=n_class)
+        self.decoder_adc = UnetDecoder(n_class=n_class)
+        self.decoder_dwi = UnetDecoder(n_class=n_class)
 
-        # output layer
-        self.final_conv = nn.Conv3d(64, n_class, kernel_size=1)
+        # moe gate
+        self.GAP = nn.Sequential(
+            nn.GroupNorm(16, 512),
+            nn.ReLU(inplace=True),
+            torch.nn.AdaptiveAvgPool3d((1,1,1)),
+            nn.Conv3d(512, 256, kernel_size=1, stride=1, padding=0),
+        )
+        self.w_gating = nn.Parameter(torch.randn(256, 3), requires_grad=True)
 
-    def forward(self, x):
+    def forward(self, x, inference=False, modality=0):
         """
-        x.shape: B, 3, 96, 96, 48
+        x.shape: B, 3, 128, 128, 16
         """
         t2w = x[:,0,...].unsqueeze(1)
         adc = x[:,1,...].unsqueeze(1)
         dwi = x[:,2,...].unsqueeze(1)
-
+        
         # encoder all these features
         t2w_skip_out64, t2w_skip_out128, t2w_skip_out256, t2w_out512 = self.encoder_t2w(t2w)
         adc_skip_out64, adc_skip_out128, adc_skip_out256, adc_out512 = self.encoder_adcdwi(adc)
         dwi_skip_out64, dwi_skip_out128, dwi_skip_out256, dwi_out512 = self.encoder_adcdwi(dwi)
         
-        # simple fusion(add) all features
+        # fuse all features
         skip_out64  = (t2w_skip_out64  + adc_skip_out64  + dwi_skip_out64)
         skip_out128 = (t2w_skip_out128 + adc_skip_out128 + dwi_skip_out128)
         skip_out256 = (t2w_skip_out256 + adc_skip_out256 + dwi_skip_out256)
         dwiadc_fusion = self.gatedfusion(dwi_out512, adc_out512)
         out512      = self.crossattfusion(dwiadc_fusion, t2w_out512)
-        print(dwi_out512.shape, t2w_out512.shape)
-        exit()
+        
         # decoder the feature
-        out_up_256 = self.up_tr256(out512, skip_out256)
-        out_up_128 = self.up_tr128(out_up_256, skip_out128)
-        out_up_64  = self.up_tr64(out_up_128, skip_out64)
-        out = self.final_conv(out_up_64)
+        t2w_out = self.decoder_t2w(out512, skip_out256, skip_out128, skip_out64)
+        dwi_out = self.decoder_dwi(out512, skip_out256, skip_out128, skip_out64)
+        adc_out = self.decoder_adc(out512, skip_out256, skip_out128, skip_out64)
 
-        return out
+        # decision-level fusion (moe)
+        flatten_feature = self.GAP(out512)
+        flatten_feature = flatten_feature.view(flatten_feature.shape[0], 256)
+        raw_gates = torch.einsum("bc,cg->bg", flatten_feature, self.w_gating)
+        raw_gates = nn.functional.sigmoid(raw_gates)
+        raw_gates = torch.where(raw_gates>0.5, 1, 0).float()  # B, 3
+        
+        expert_outputs = torch.stack([t2w_out, adc_out, dwi_out], dim=1)
+        moe_out = torch.einsum("bnchwd,bn->bchwd", expert_outputs, raw_gates)
+        moe_out = torch.where(moe_out>=1, 1, 0)   # B, num_cls, w, h, d
+        moe_out = nn.functional.one_hot(moe_out[:,1,...], num_classes=2).permute(0, 4, 1, 2, 3) # B, num_cls, w, h, d
+
+        if inference:
+            out_list = [t2w_out, dwi_out, adc_out, moe_out]
+            return out_list[modality]
+        
+        return t2w_out, dwi_out, adc_out, moe_out
         
 
 
 
 if __name__ == "__main__":
-    x = torch.ones((1, 3, 96, 96, 48))
-    model = GatedFusionSeg()
+    x = torch.ones((2, 3, 128, 128, 16))
+    model = MoESeg()
     
     # load pretrain model
     pred = model(x)
