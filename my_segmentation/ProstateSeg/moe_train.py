@@ -98,7 +98,7 @@ def train(args, train_loader, model, optimizer, loss_function):
         dwi_loss = loss_function(dwi_out, dwi_y)
         adc_loss = loss_function(adc_out, adc_y)
         moe_loss = loss_function(moe_out, t2w_y)
-        loss = t2w_loss + dwi_loss + adc_loss + moe_loss
+        loss = 0.25 * (t2w_loss + dwi_loss + adc_loss + moe_loss)
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
