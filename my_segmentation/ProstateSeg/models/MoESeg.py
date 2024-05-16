@@ -253,7 +253,7 @@ class MoESeg(nn.Module):
         expert_outputs = torch.stack([t2w_out, adc_out, dwi_out], dim=1)
         moe_out = torch.einsum("bnchwd,bn->bchwd", expert_outputs, raw_gates)
         moe_out = torch.where(moe_out>=1, 1, 0)   # B, num_cls, w, h, d
-        moe_out = nn.functional.one_hot(moe_out[:,1,...], num_classes=2).permute(0, 4, 1, 2, 3) # B, num_cls, w, h, d
+        moe_out = nn.functional.one_hot(moe_out[:,1,...], num_classes=2).permute(0, 4, 1, 2, 3).float() # B, num_cls, w, h, d
 
         if inference:
             out_list = [t2w_out, dwi_out, adc_out, moe_out]
