@@ -15,7 +15,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def _get_model():
+def _get_model(args):
     from models.MoESeg import MoESeg
     model = MoESeg()
     return model
