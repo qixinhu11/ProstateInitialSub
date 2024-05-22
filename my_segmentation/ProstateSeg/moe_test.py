@@ -80,10 +80,10 @@ def test(args):
                 predictor=model,
                 overlap=0.5,
                 inference=True,
-                modality=args.modality
+                modality=3
             )
             test_outputs = [post_trans(i) for i in decollate_batch(test_outputs)]
-            test_outputs = test_outputs[0][1]
+            test_outputs = test_outputs[0][0]
             # save it
             test_outputs = test_outputs.cpu().detach().numpy()
             current_dice = cal_dice(test_outputs, label)
@@ -96,7 +96,6 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--modality', default=3, type=int)
     parser.add_argument('--epoch', default=1000, type=int)
     parser.add_argument('--model_name', default=None, type=str)
     parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
