@@ -254,9 +254,10 @@ class MoESeg(nn.Module):
         moe_out = torch.einsum("bnchwd,bn->bchwd", expert_outputs, raw_gates)
         moe_out = torch.where(moe_out>=1, 1, 0)   # B, num_cls, w, h, d
         moe_out = nn.functional.one_hot(moe_out[:,1,...], num_classes=2).permute(0, 4, 1, 2, 3).float() # B, num_cls, w, h, d
-
+        
         if inference:
             out_list = [t2w_out, dwi_out, adc_out, moe_out]
+            print(raw_gates, end='\t')
             return out_list[modality]
         
         return t2w_out, dwi_out, adc_out, moe_out
