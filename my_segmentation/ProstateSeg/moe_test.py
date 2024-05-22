@@ -9,6 +9,12 @@ from dataset.prostateMoE import prostateMoE
 import warnings
 warnings.filterwarnings("ignore")
 
+def cal_dice(pred, label):
+    intersection = np.logical_and(pred, label).sum()
+    total_pixels = pred.sum() + label.sum()
+    dice_score = (2.0 * intersection) / (1e-9 + total_pixels)
+    return dice_score
+
 def _get_model(args):
     from models.MoESeg import MoESeg
     model = MoESeg()
@@ -44,17 +50,29 @@ def _get_loader(args):
     return test_loader
 
 def test(args):
+    # check test list
+    label_root = args.file_root
+    test_list = []
+    with open('./cspca_test.txt', 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            test_list.append(line)
+
     # load model
     model = _get_model(args)
     model.eval()
-
     # test loader
+    dice_list = []
     test_loader = _get_loader(args)
     with torch.no_grad():
         post_trans = transforms.Compose([transforms.Activations(sigmoid=True), transforms.AsDiscrete(threshold=0.5)])
         for test_batch in test_loader:
             test_inputs = test_batch["image"].to(args.device)
             name = test_batch['name'][0].split('/')[-1]
+            if name.split('.')[0] not in test_list:
+                continue
+            label = np.load(os.path.join(label_root, name))['mask'][0,...].astype(np.float32) # 224*224*30
             test_outputs = sliding_window_inference(
                 inputs=test_inputs,
                 roi_size=(128, 128, 16),
@@ -68,8 +86,11 @@ def test(args):
             test_outputs = test_outputs[0][1]
             # save it
             test_outputs = test_outputs.cpu().detach().numpy()
-            np.savez(os.path.join(args.save_root, name), pred=test_outputs)
-            print(name, test_outputs.shape, np.max(test_outputs))
+            current_dice = cal_dice(test_outputs, label)
+            # np.savez(os.path.join(args.save_root, name), pred=test_outputs)
+            print(name, test_outputs.shape, np.max(test_outputs), current_dice)
+            dice_list.append(current_dice)
+    print(np.mean(dice_list))
 
 if __name__ == "__main__":
     import argparse

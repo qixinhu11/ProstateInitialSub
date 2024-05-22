@@ -38,7 +38,6 @@ def _get_model(args):
     model.to(args.device)
     return model
     
-    return model
 def _get_loader(args):
     file_root = args.file_root
     test_samples = []
