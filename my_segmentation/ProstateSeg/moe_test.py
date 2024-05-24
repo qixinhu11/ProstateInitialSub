@@ -80,7 +80,7 @@ def test(args):
                 predictor=model,
                 overlap=0.5,
                 inference=True,
-                modality=3
+                modality=0
             )
             test_outputs = [post_trans(i) for i in decollate_batch(test_outputs)]
             test_outputs = test_outputs[0][0]
