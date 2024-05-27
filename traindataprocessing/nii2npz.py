@@ -7,7 +7,8 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 import cv2 as cv2
 import SimpleITK as sitk
-from skimage.measure import label  
+from skimage.measure import label as measurelabel
+from scipy.ndimage import label
 from monai import transforms, data
 from scipy import ndimage
 
@@ -45,7 +46,7 @@ def find_bbox_center(seg):
     return (x_start, x_end, y_start, y_end, z_start, z_end)
 
 def getLargestCC(segmentation):
-    labels = label(segmentation)
+    labels = measurelabel(segmentation)
     assert( labels.max() != 0 ) # assume at least 1 CC
     largestCC = labels == np.argmax(np.bincount(labels.flat)[1:])+1
     return largestCC
@@ -169,51 +170,60 @@ def normalize(img_):
     img_ = (img_ - min_) / (max_ - min_ + 1e-9)
     img_ = img_ * 2 - 1
     return img_
-     
+
+def read_dicom(name):
+    data = sitk.ReadImage(name)
+    data = sitk.GetArrayFromImage(data)
+    data = np.transpose(data, (1, 2, 0))
+    return data
+
+def round2mask(t2w_gt):
+    new_t2w = (t2w_gt==0) + (t2w_gt>1)
+    mask = np.zeros_like(new_t2w)
+    for z in range(new_t2w.shape[-1]):
+        labels, nb = label(new_t2w[...,z])
+        for idx in range(1, nb+1):
+            if idx == 2:
+                mask[...,z] = (labels == idx)
+    mask = ndimage.binary_dilation(mask, iterations=1)
+    return mask
+ 
+def get_zoom_image(org_image:np.ndarray, mode="constant", order=3):
+    """
+    zoom image to 224,224,30
+    """
+    x,y,z = org_image.shape
+    xmid, ymid = x//2, y//2
+    crop_image = org_image[xmid-112:xmid+112,ymid-112:ymid+112,...]
+    zoom_image = ndimage.zoom(crop_image,zoom=(1, 1, 30/z),mode=mode,order=order)
+    return zoom_image
+
 def get_single_case(aligned_root, name):
-    t2w = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_T2W.nii.gz"))
-    t2w = sitk.GetArrayFromImage(t2w)
-    t2w = normalize(t2w)
-    t2w = np.transpose(t2w, (1, 2, 0))
-
-    dwi = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_DWI.nii.gz"))
-    dwi = sitk.GetArrayFromImage(dwi)
-    dwi = normalize(dwi)
-    dwi = np.transpose(dwi, (1, 2, 0))
-
-    adc = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_ADC.nii.gz"))
-    adc = sitk.GetArrayFromImage(adc)
-    adc = normalize(adc)
-    adc = np.transpose(adc, (1, 2, 0))
-
-    t2w_gt = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_T2W_gt.nii.gz"))
-    t2w_gt = sitk.GetArrayFromImage(t2w_gt)
-    t2w_gt_old = np.transpose(t2w_gt, (1, 2, 0))
+    t2w_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_T2W_gt.nii.gz"))
     t2w_gt = np.zeros_like(t2w_gt_old)
     t2w_gt[t2w_gt_old>1] = 1
-
-    dwi_gt = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_DWI_gt.nii.gz"))
-    dwi_gt = sitk.GetArrayFromImage(dwi_gt)
-    dwi_gt_old = np.transpose(dwi_gt, (1, 2, 0))
+    dwi_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_DWI_gt.nii.gz"))
     dwi_gt = np.zeros_like(dwi_gt_old)
     dwi_gt[dwi_gt_old>1] = 1
-
-    adc_gt = sitk.ReadImage(os.path.join(aligned_root, name, name+ "_ADC_gt.nii.gz"))
-    adc_gt = sitk.GetArrayFromImage(adc_gt)
-    adc_gt_old = np.transpose(adc_gt, (1, 2, 0))
+    adc_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_ADC_gt.nii.gz"))
     adc_gt = np.zeros_like(adc_gt_old)
     adc_gt[adc_gt_old>1] = 1
+    mask = round2mask(t2w_gt_old)
 
-    # resize to 224*224*30
-    x,y,z = t2w.shape
-    resize_x,resize_y,resize_z = 224, 224, 30
-    zoom_t2w = ndimage.zoom(t2w, zoom=(resize_x/x, resize_y/y, resize_z/z))
-    zoom_adc = ndimage.zoom(adc, zoom=(resize_x/x, resize_y/y, resize_z/z))
-    zoom_dwi = ndimage.zoom(dwi, zoom=(resize_x/x, resize_y/y, resize_z/z))
+    t2w = read_dicom(os.path.join(aligned_root, name, name+ "_T2W.nii.gz")) * mask
+    dwi = read_dicom(os.path.join(aligned_root, name, name+ "_DWI.nii.gz")) * mask
+    adc = read_dicom(os.path.join(aligned_root, name, name+ "_ADC.nii.gz")) * mask
+    t2w = normalize(t2w)
+    dwi = normalize(dwi)
+    adc = normalize(adc)
 
-    zoom_t2w_gt = ndimage.zoom(t2w_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
-    zoom_adc_gt = ndimage.zoom(adc_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
-    zoom_dwi_gt = ndimage.zoom(dwi_gt, zoom=(resize_x/x, resize_y/y, resize_z/z), mode="nearest", order=0)
+    zoom_t2w = get_zoom_image(t2w)
+    zoom_adc = get_zoom_image(adc)
+    zoom_dwi = get_zoom_image(dwi)
+
+    zoom_t2w_gt = get_zoom_image(t2w_gt, mode="nearest", order=0)
+    zoom_adc_gt = get_zoom_image(adc_gt, mode="nearest", order=0)
+    zoom_dwi_gt = get_zoom_image(dwi_gt, mode="nearest", order=0)
 
     return zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt
 
