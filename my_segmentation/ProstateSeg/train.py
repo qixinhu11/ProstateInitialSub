@@ -255,7 +255,7 @@ if __name__ == "__main__":
     if args.model_name:
         args.root_dir = 'out/' + f'{args.model_name}_BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
     else:
-        args.root_dir = 'out/' + f'BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
+        args.root_dir = 'out/' + f'Zoom_BS{args.batch_size}_LR{args.lr}_MOD{args.modality}'
     args.epoch = 0
 
     print("MAIN Argument values:")
