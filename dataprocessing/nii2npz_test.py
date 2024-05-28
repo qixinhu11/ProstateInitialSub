@@ -1,4 +1,4 @@
-import os 
+import os, shutil
 import numpy as np 
 import nibabel as nib 
 import os, json, monai, torch
@@ -6,27 +6,13 @@ import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
 import cv2 as cv2
-from skimage.measure import label  
+import SimpleITK as sitk
+from skimage.measure import label as measurelabel
+from scipy.ndimage import label
 from monai import transforms, data
 from scipy import ndimage
 
-# change the name and the spacing
-def change_spacing(prediction_root, aligned_root):
-    aligned_root = 'data/raw_aligned/'
-    prediction_root = 'data/all_1113/'
-    case_list = os.listdir(aligned_root)
-    for case in case_list:
-        t2w_case = nib.load(os.path.join(aligned_root, case, case+"_T2W.nii.gz"))
-        pred_mask = nib.load(os.path.join(prediction_root, case, "T2W_PZ_raw.nii.gz" )).get_fdata()
-        original_affine  = t2w_case.affine
-        save_name = os.path.join(aligned_root, case, case+"_T2W_gt.nii.gz")
-        nib.save(
-            nib.Nifti1Image(pred_mask.astype(np.uint8), original_affine), save_name
-        )
-        print(case, 'done')
-    
-
-# do classification preprocessing
+# classification preprocessing
 def _get_transform():
     train_transform = transforms.Compose(
         [
@@ -60,7 +46,7 @@ def find_bbox_center(seg):
     return (x_start, x_end, y_start, y_end, z_start, z_end)
 
 def getLargestCC(segmentation):
-    labels = label(segmentation)
+    labels = measurelabel(segmentation)
     assert( labels.max() != 0 ) # assume at least 1 CC
     largestCC = labels == np.argmax(np.bincount(labels.flat)[1:])+1
     return largestCC
@@ -73,8 +59,7 @@ def keep_largest_component(segmentation, labels):
         mask[segmentation_l_LCC == True] = l 
     return mask
 
-
-def preprocessing(save_root, datalist):
+def preprocessing_cls(save_root, datalist):
 
     transform = _get_transform()
     ds = data.Dataset(data=datalist, transform=transform)
@@ -150,17 +135,15 @@ def preprocessing(save_root, datalist):
         np.savez(os.path.join(DWI_ADC, name), img=dwi_adc, mask=two_mask)
         print(name, 'is move to all modality')
 
-
-if __name__ == "__main__":
-    prediction_root = 'data/all_1113/'
-    aligned_root = 'data/raw_aligned/'
-    preprocessing_root = 'data/preprocess/ALL'
+def cls_processing(aligned_root, preprocessing_root):
+    label_root = os.path.join(preprocessing_root, 'CLS')
+    preprocessing_root = os.path.join(preprocessing_root, 'CLS', 'ALL')
     os.makedirs(preprocessing_root, exist_ok=True)
 
-    print("="*20, end='\t')
-    print("Start to change the spacing of precition segmentation")
-    change_spacing(prediction_root, aligned_root)
-
+    # move current file to the classification root
+    shutil.copy2('./test_case_level.txt', os.path.join(label_root, "test_case_level.txt"))
+    shutil.copy2('./train_case_level.txt', os.path.join(label_root, "train_case_level.txt"))
+    shutil.copy2('./case_level_label.npz', os.path.join(label_root, "case_level_label.npz"))
 
     print("="*20, end='\t')
     print("Start to do pre-processing for classification")
@@ -171,8 +154,74 @@ if __name__ == "__main__":
         for modality in ["T2W", "ADC", "DWI"]:
             sample[modality] = os.path.join(aligned_root, name, f'{name}_{modality}.nii.gz')
         datalist.append(sample)
+    preprocessing_cls(preprocessing_root, datalist)
 
-    preprocessing(preprocessing_root, datalist)
+# segmentation preprocessing
+def normalize(img_):
+    #img_[img_>=250] = 250
+    #img_[img_<=-200] = -200
+    mean = np.mean(img_)
+    std = np.std(img_)
+    # mean = -0.29790374886599763
+    # std = 0.29469745653088375
+    img_ = (img_ - mean) / std
+    max_ = np.max(img_)
+    min_ = np.min(img_)
+    img_ = (img_ - min_) / (max_ - min_ + 1e-9)
+    img_ = img_ * 2 - 1
+    return img_
+
+def read_nii(name):
+    data = sitk.ReadImage(name)
+    data = sitk.GetArrayFromImage(data)
+    data = np.transpose(data, (1, 2, 0))
+    return data
+ 
+def get_zoom_image(org_image:np.ndarray, mode="constant", order=3):
+    """
+    zoom image to 224,224,30
+    """
+    x,y,z = org_image.shape
+    xmid, ymid = x//2, y//2
+    crop_image = org_image[xmid-112:xmid+112,ymid-112:ymid+112,...]
+    zoom_image = ndimage.zoom(crop_image,zoom=(1, 1, 30/z),mode=mode,order=order)
+    return zoom_image
+
+def get_single_case(aligned_root, name):
+    t2w = read_nii(os.path.join(aligned_root, name, name+ "_T2W.nii.gz"))
+    dwi = read_nii(os.path.join(aligned_root, name, name+ "_DWI.nii.gz"))
+    adc = read_nii(os.path.join(aligned_root, name, name+ "_ADC.nii.gz"))
+    t2w = normalize(t2w)
+    dwi = normalize(dwi)
+    adc = normalize(adc)
+
+    zoom_t2w = get_zoom_image(t2w)
+    zoom_adc = get_zoom_image(adc)
+    zoom_dwi = get_zoom_image(dwi)
+
+    zoom_t2w_gt = np.zeros_like(zoom_t2w)
+    zoom_adc_gt = np.zeros_like(zoom_adc)
+    zoom_dwi_gt = np.zeros_like(zoom_dwi)
+
+    return zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt
+
+def seg_processing(aligned_root, preprocessing_root):
+    preprocessing_root = os.path.join(preprocessing_root, 'SEG')
+    os.makedirs(preprocessing_root, exist_ok=True)
+    name_list = os.listdir(aligned_root)
     print("="*20, end='\t')
-    print("All done!")
+    print("Start to do pre-processing for segmentation, total of {} cases.".format(len(name_list)))
+    for idx, name in enumerate(name_list):
+        zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt = get_single_case(aligned_root, name)
+        img = np.stack([zoom_t2w, zoom_dwi, zoom_adc], axis=0)
+        mask = np.stack([zoom_t2w_gt, zoom_dwi_gt, zoom_adc_gt], axis=0)
 
+        np.savez(os.path.join(preprocessing_root, name), img=img, mask=mask)
+        print(f"{idx+1}/{len(name_list)} ||", name, img.shape, mask.shape, 'done')
+
+
+
+if __name__ == "__main__":
+    tiantian_root = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian"
+    qixin_root    = "data/qixin"
+    seg_processing(tiantian_root, qixin_root)

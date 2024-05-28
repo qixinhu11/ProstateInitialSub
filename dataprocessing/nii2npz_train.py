@@ -208,11 +208,10 @@ def get_single_case(aligned_root, name):
     adc_gt_old = read_nii(os.path.join(aligned_root, name, name+ "_ADC_gt.nii.gz"))
     adc_gt = np.zeros_like(adc_gt_old)
     adc_gt[adc_gt_old>1] = 1
-    mask = round2mask(t2w_gt_old)
 
-    t2w = read_nii(os.path.join(aligned_root, name, name+ "_T2W.nii.gz")) * mask
-    dwi = read_nii(os.path.join(aligned_root, name, name+ "_DWI.nii.gz")) * mask
-    adc = read_nii(os.path.join(aligned_root, name, name+ "_ADC.nii.gz")) * mask
+    t2w = read_nii(os.path.join(aligned_root, name, name+ "_T2W.nii.gz"))
+    dwi = read_nii(os.path.join(aligned_root, name, name+ "_DWI.nii.gz"))
+    adc = read_nii(os.path.join(aligned_root, name, name+ "_ADC.nii.gz"))
     t2w = normalize(t2w)
     dwi = normalize(dwi)
     adc = normalize(adc)
@@ -236,7 +235,6 @@ def seg_processing(aligned_root, preprocessing_root):
     name_list = os.listdir(aligned_root)
     print("="*20, end='\t')
     print("Start to do pre-processing for segmentation, total of {} cases.".format(len(name_list)))
-    
     for idx, name in enumerate(name_list):
         zoom_t2w, zoom_adc, zoom_dwi, zoom_t2w_gt, zoom_adc_gt, zoom_dwi_gt = get_single_case(aligned_root, name)
         img = np.stack([zoom_t2w, zoom_dwi, zoom_adc], axis=0)
@@ -244,15 +242,12 @@ def seg_processing(aligned_root, preprocessing_root):
 
         np.savez(os.path.join(preprocessing_root, name), img=img, mask=mask)
         print(f"{idx+1}/{len(name_list)} ||", name, img.shape, mask.shape, 'done')
-
-
-
+        
 if __name__ == "__main__":
-
     import argparse
     parser = argparse.ArgumentParser(description='dicom to nii file')
 
-    parser.add_argument('--tingting_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tingting", type=str)
+    parser.add_argument('--tingting_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian", type=str)
     parser.add_argument('--qixin_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin", type=str)
 
     args = parser.parse_args()

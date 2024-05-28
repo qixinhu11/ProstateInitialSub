@@ -85,25 +85,37 @@ def wenao_save(T2W_images, DWI_images, ADC_images, save_path):
         originImg[i] = cv2.resize(Images[i], (224, 224))
     resultImage_ = sitk.GetImageFromArray(originImg)  
     sitk.WriteImage(resultImage_, save_path+'ADC.nii.gz')
-def tingting_save(T2W_images, DWI_images, ADC_images, save_root, name):
+def tiantian_save(T2W_images, DWI_images, ADC_images, T2W_gt, DWI_gt, ADC_gt, save_root, name):
+
     # T2W
     os.makedirs(os.path.join(save_root, name), exist_ok=True)
     T2W_save_name = os.path.join(save_root, name, name+"_T2W")
     sitk.WriteImage(T2W_images, T2W_save_name+'.nii.gz')
+    
+    T2W_gt = sitk.ReadImage(T2W_gt)
+    sitk.WriteImage(T2W_gt, T2W_save_name+'_gt.nii.gz')
 
     # DWI
     DWI_images = align_seg_with_raw_nrrd(T2W_images, DWI_images)
     DWI_save_name = os.path.join(save_root, name, name+"_DWI")
     sitk.WriteImage(DWI_images, DWI_save_name+'.nii.gz')
     
+    DWI_gt = sitk.ReadImage(DWI_gt)
+    DWI_gt = align_seg_with_raw_nrrd(T2W_gt, DWI_gt)
+    sitk.WriteImage(DWI_gt, DWI_save_name+'_gt.nii.gz')
+
     # ADC
     ADC_images = align_seg_with_raw_nrrd(T2W_images, ADC_images)
     ADC_save_name = os.path.join(save_root, name, name+"_ADC")
     sitk.WriteImage(ADC_images, ADC_save_name+'.nii.gz')
 
+    ADC_gt = sitk.ReadImage(ADC_gt)
+    ADC_gt = align_seg_with_raw_nrrd(T2W_gt, ADC_gt)
+    sitk.WriteImage(ADC_gt, ADC_save_name+'_gt.nii.gz')
 
 
-def main(raw_dicom_root, tingting_save_root, wenao_save_root):
+
+def main(raw_dicom_root, tiantian_save_root, wenao_save_root):
     # Dicon to .nii.gz
     print("="*20, end='\t')
     print("Start to transfer .dicon to .nii.gz file")
@@ -113,7 +125,7 @@ def main(raw_dicom_root, tingting_save_root, wenao_save_root):
         name = dir.split('_')[0]
         dwi_postfix = sorted(os.listdir(os.path.join(raw_dicom_root, dir)))[1]
 
-        wenao_save_path = 'data/all_1113/' + dir.split('_')[0] + '/'
+        wenao_save_path = wenao_save_root + '/' + dir.split('_')[0] + '/'
         os.makedirs(wenao_save_path,exist_ok=True)
 
         T2W_path = os.path.join(raw_dicom_root, dir, name + '_T2W/')
@@ -123,13 +135,17 @@ def main(raw_dicom_root, tingting_save_root, wenao_save_root):
         T2W_images = read_dcm(T2W_path)
         DWI_images = read_dcm(DWI_path)
         ADC_images = read_dcm(ADC_path)
+
+        T2W_gt = os.path.join(raw_dicom_root, dir, name + '_T2W/', name + '_T2W.nii.gz')
+        DWI_gt = os.path.join(raw_dicom_root, dir, name + '_DWI/', name + '_DWI.nii.gz')
+        ADC_gt = os.path.join(raw_dicom_root, dir, name + '_ADC/', name + '_ADC.nii.gz')
+
         # wenao save T2W/DWI/ADC ways
         wenao_save(T2W_images, DWI_images, ADC_images, wenao_save_path)
-        # tingting save T2W/DWI/ADC ways
-        tingting_save(T2W_images, DWI_images, ADC_images, tingting_save_root, name)
+        # tiantian save T2W/DWI/ADC ways
+        tiantian_save(T2W_images, DWI_images, ADC_images, T2W_gt, DWI_gt, ADC_gt, tiantian_save_root, name)
 
         print(name, "done")
-
 
     # .nii.gz to .h5 file
     print("="*20, end='\t')
@@ -142,15 +158,15 @@ def main(raw_dicom_root, tingting_save_root, wenao_save_root):
 
     for idx in range(len(path_list)):
         slice_name = path_list[idx].split('_')[0]
-        img_path = wenao_save_root + slice_name + '/T2W.nii.gz'
+        img_path = os.path.join(wenao_save_root, slice_name, "T2W.nii.gz")
         img_sitk = sitk.ReadImage(img_path)
         img_T2W = sitk.GetArrayFromImage(img_sitk)
 
-        img_path = wenao_save_root + slice_name + '/DWI.nii.gz'
+        img_path = os.path.join(wenao_save_root, slice_name, "DWI.nii.gz")
         img_sitk = sitk.ReadImage(img_path)
         img_DWI = sitk.GetArrayFromImage(img_sitk)
         
-        img_path = wenao_save_root + slice_name + '/ADC.nii.gz'
+        img_path = os.path.join(wenao_save_root, slice_name, "ADC.nii.gz")
         img_sitk = sitk.ReadImage(img_path)
         img_ADC = sitk.GetArrayFromImage(img_sitk)
 
@@ -171,21 +187,19 @@ def main(raw_dicom_root, tingting_save_root, wenao_save_root):
             gt_resize[num,2] = ADC_gt[num]
             gt_resize[num,3] = Con_gt[num]
         
-        f = h5py.File(wenao_save_root + slice_name +'/data_con_PZ.npy.h5','w')
+        f = h5py.File(wenao_save_root + '/' + slice_name +'/data_con_PZ.npy.h5','w')
         f['image'] = img_resize
         f['label'] = gt_resize
         f.close()
-        save_info = wenao_save_root + slice_name + '/'
-        with open('./test_PZ.txt','a') as fp:
-            fp.write(save_info+'\n')
-            fp.close()
-        print(slice_name, "done")
 
 if __name__ == "__main__":
-    raw_dicom_root = 'data/raw'
-    tingting_save_root = 'data/raw_aligned/'
-    wenao_save_root = 'data/all_1113/'
+    test_root  = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Test"
+    train_root = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Train"
+    tiantian_save_root = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian"
+    wenao_save_root    = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/wenao"
 
-    main(raw_dicom_root, tingting_save_root, wenao_save_root)
+
+    main(test_root, tiantian_save_root, wenao_save_root)
+    main(train_root, tiantian_save_root, wenao_save_root)
     print("="*20, end='\t')
     print("All done!")
