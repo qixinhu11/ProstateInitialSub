@@ -33,7 +33,7 @@ def _get_model(args):
             out_channels=2,
             dropout_prob=0.2,
         )
-        model_path = f"out/BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
+        model_path = f"out/Zoom_BS1_LR0.0001_MOD{args.modality}/model_{args.epoch}.pth"
     model.load_state_dict(torch.load(model_path)['net'])
     model.to(args.device)
     return model
@@ -104,5 +104,5 @@ if __name__ == "__main__":
     args.device = device
 
     # save root 
-    args.save_root = f"out/BS1_LR0.0001_MOD{args.modality}"
+    args.save_root = f"out/Zoom_BS1_LR0.0001_MOD{args.modality}"
     test(args)

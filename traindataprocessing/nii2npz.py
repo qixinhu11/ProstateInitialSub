@@ -171,7 +171,7 @@ def normalize(img_):
     img_ = img_ * 2 - 1
     return img_
 
-def read_dicom(name):
+def read_nii(name):
     data = sitk.ReadImage(name)
     data = sitk.GetArrayFromImage(data)
     data = np.transpose(data, (1, 2, 0))
@@ -199,20 +199,20 @@ def get_zoom_image(org_image:np.ndarray, mode="constant", order=3):
     return zoom_image
 
 def get_single_case(aligned_root, name):
-    t2w_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_T2W_gt.nii.gz"))
+    t2w_gt_old = read_nii(os.path.join(aligned_root, name, name+ "_T2W_gt.nii.gz"))
     t2w_gt = np.zeros_like(t2w_gt_old)
     t2w_gt[t2w_gt_old>1] = 1
-    dwi_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_DWI_gt.nii.gz"))
+    dwi_gt_old = read_nii(os.path.join(aligned_root, name, name+ "_DWI_gt.nii.gz"))
     dwi_gt = np.zeros_like(dwi_gt_old)
     dwi_gt[dwi_gt_old>1] = 1
-    adc_gt_old = read_dicom(os.path.join(aligned_root, name, name+ "_ADC_gt.nii.gz"))
+    adc_gt_old = read_nii(os.path.join(aligned_root, name, name+ "_ADC_gt.nii.gz"))
     adc_gt = np.zeros_like(adc_gt_old)
     adc_gt[adc_gt_old>1] = 1
     mask = round2mask(t2w_gt_old)
 
-    t2w = read_dicom(os.path.join(aligned_root, name, name+ "_T2W.nii.gz")) * mask
-    dwi = read_dicom(os.path.join(aligned_root, name, name+ "_DWI.nii.gz")) * mask
-    adc = read_dicom(os.path.join(aligned_root, name, name+ "_ADC.nii.gz")) * mask
+    t2w = read_nii(os.path.join(aligned_root, name, name+ "_T2W.nii.gz")) * mask
+    dwi = read_nii(os.path.join(aligned_root, name, name+ "_DWI.nii.gz")) * mask
+    adc = read_nii(os.path.join(aligned_root, name, name+ "_ADC.nii.gz")) * mask
     t2w = normalize(t2w)
     dwi = normalize(dwi)
     adc = normalize(adc)
