@@ -193,13 +193,16 @@ def main(raw_dicom_root, tiantian_save_root, wenao_save_root):
         f.close()
 
 if __name__ == "__main__":
-    test_root  = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Test"
-    train_root = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Train"
-    tiantian_save_root = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian"
-    wenao_save_root    = "/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/wenao"
+    import argparse
+    parser = argparse.ArgumentParser(description='dicom to nii file')
 
+    parser.add_argument('--test_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Test", type=str)
+    parser.add_argument('--train_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/PAIs_Data2AIteam_20240426/Case_lesion12345/Train", type=str)
+    parser.add_argument('--tiantian_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian", type=str)
+    parser.add_argument('--wenao_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/wenao", type=str)
+    args = parser.parse_args()
 
-    main(test_root, tiantian_save_root, wenao_save_root)
-    main(train_root, tiantian_save_root, wenao_save_root)
+    main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
+    main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
     print("="*20, end='\t')
     print("All done!")

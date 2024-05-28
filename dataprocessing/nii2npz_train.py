@@ -247,10 +247,10 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='dicom to nii file')
 
-    parser.add_argument('--tingting_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian", type=str)
+    parser.add_argument('--tiantian_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian", type=str)
     parser.add_argument('--qixin_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin", type=str)
 
     args = parser.parse_args()
 
-    # cls_processing(args.tingting_save_path, args.qixin_save_path)
-    seg_processing(args.tingting_save_path, args.qixin_save_path)
+    # cls_processing(args.tiantian_save_path, args.qixin_save_path)
+    seg_processing(args.tiantian_save_path, args.qixin_save_path)
