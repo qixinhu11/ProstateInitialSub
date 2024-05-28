@@ -202,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument('--wenao_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/wenao", type=str)
     args = parser.parse_args()
 
-    main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
-    main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
+    # main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
+    main(args.train_path, args.tiantian_save_path, args.wenao_save_path)
     print("="*20, end='\t')
     print("All done!")
