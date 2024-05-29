@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from trainer import trainer
 from dataset.prostateDataset import prostateDataset
 # from models.vit_3d import ViT
-
+from oversampling.imbalanced import ImbalancedDatasetSampler
 from optimizers.lr_scheduler import WarmupCosineSchedule,LinearWarmupCosineAnnealingLR
 
 
@@ -89,7 +89,9 @@ def _get_data_loader(args):
     )
 
     train_ds = prostateDataset(npz_files=train_images, labels=train_labels, img_transforms=train_img_transform, seg_transforms=None)
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=0, pin_memory=True)
+    train_sampler = ImbalancedDatasetSampler(train_ds, torch.argmax(train_labels,dim=1))
+    train_loader = DataLoader(train_ds, sampler=train_sampler,
+                              batch_size=args.batch_size, shuffle=True,num_workers=0, pin_memory=True)
 
     
     val_ds = prostateDataset(npz_files=val_images, labels=val_labels, img_transforms=val_img_transform, seg_transforms=None)
