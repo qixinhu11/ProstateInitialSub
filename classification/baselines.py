@@ -91,7 +91,7 @@ def _get_data_loader(args):
     train_ds = prostateDataset(npz_files=train_images, labels=train_labels, img_transforms=train_img_transform, seg_transforms=None)
     train_sampler = ImbalancedDatasetSampler(train_ds, torch.argmax(train_labels,dim=1))
     train_loader = DataLoader(train_ds, sampler=train_sampler,
-                              batch_size=args.batch_size, shuffle=True,num_workers=0, pin_memory=True)
+                              batch_size=args.batch_size, num_workers=0, pin_memory=True)
 
     
     val_ds = prostateDataset(npz_files=val_images, labels=val_labels, img_transforms=val_img_transform, seg_transforms=None)
