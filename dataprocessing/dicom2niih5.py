@@ -123,13 +123,12 @@ def main(raw_dicom_root, tiantian_save_root, wenao_save_root):
     path_list = os.listdir(raw_dicom_root)
     for dir in path_list:
         name = dir.split('_')[0]
-        dwi_postfix = sorted(os.listdir(os.path.join(raw_dicom_root, dir)))[1]
 
         wenao_save_path = wenao_save_root + '/' + dir.split('_')[0] + '/'
         os.makedirs(wenao_save_path,exist_ok=True)
 
         T2W_path = os.path.join(raw_dicom_root, dir, name + '_T2W/')
-        DWI_path = os.path.join(raw_dicom_root, dir, dwi_postfix)
+        DWI_path = os.path.join(raw_dicom_root, dir, name + '_DWI')
         ADC_path = os.path.join(raw_dicom_root, dir, name + '_ADC/')
 
         T2W_images = read_dcm(T2W_path)
@@ -202,7 +201,7 @@ if __name__ == "__main__":
     parser.add_argument('--wenao_save_path', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/wenao", type=str)
     args = parser.parse_args()
 
-    # main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
+    main(args.test_path, args.tiantian_save_path, args.wenao_save_path)
     main(args.train_path, args.tiantian_save_path, args.wenao_save_path)
     print("="*20, end='\t')
     print("All done!")

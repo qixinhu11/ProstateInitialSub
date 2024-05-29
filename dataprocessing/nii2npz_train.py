@@ -252,5 +252,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # cls_processing(args.tiantian_save_path, args.qixin_save_path)
-    seg_processing(args.tiantian_save_path, args.qixin_save_path)
+    cls_processing(args.tiantian_save_path, args.qixin_save_path)
+    # seg_processing(args.tiantian_save_path, args.qixin_save_path)
