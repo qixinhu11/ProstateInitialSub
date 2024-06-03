@@ -50,7 +50,8 @@ def _get_loader(args):
             EnsureTyped(keys=["image", "label"]),
             ConvertLabelBasedOnClasses(keys="label"),
             EnsureChannelFirstd(keys=["image", "label"]),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
+            # Orientationd(keys=["image", "label"], axcodes="RAS"),
+            Orientationd(keys=["image", "label"], axcodes="PLS"),
             Spacingd(
                 keys=["image", "label"],
                 pixdim=(1.0, 1.0, 1.0),
@@ -81,7 +82,8 @@ def _get_loader(args):
             EnsureTyped(keys=["image", "label"]),
             ConvertLabelBasedOnClasses(keys="label"),
             EnsureChannelFirstd(keys=["image", "label"]),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
+            # Orientationd(keys=["image", "label"], axcodes="RAS"),
+            Orientationd(keys=["image", "label"], axcodes="PLS"),
             Spacingd(
                 keys=["image", "label"],
                 pixdim=(1.0, 1.0, 1.0),
@@ -101,8 +103,8 @@ def _get_loader(args):
     train_ds = SmartCacheDataset(
                 data=train_samples,
                 transform=train_transform,
-                cache_num=50,
-                cache_rate=1.0,
+                cache_num=60,
+                replace_rate=0.5,
                 num_init_workers=2,
                 num_replace_workers=2
             )
