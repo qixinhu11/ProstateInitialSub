@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 
 def _get_loader(args):
     train_samples = []
-    with open('./train_case_level.txt', 'r') as f:
+    with open(f'./{args.modality}.txt', 'r') as f:
         lines = f.readlines()
         for name in lines:
             name = name.strip()
