@@ -161,7 +161,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_samples', default=2, type=int)
 
     parser.add_argument('--max_epoch', default=2000, type=int)
-    parser.add_argument('--eval_every', default=50, type=int)
+    parser.add_argument('--eval_every', default=10, type=int)
     parser.add_argument('--warmup_epoch', default=50, type=int)
 
     # new args

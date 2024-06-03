@@ -64,7 +64,7 @@ def validation(args, test_loader, model):
                 val_data["image"].to(args.device),
                 val_data["label"].to(args.device),
             )
-            name = val_data['name'][0]
+            name = val_data['image_meta_dict']['filename_or_obj'][0].split('/')[-2]
             val_outputs = sliding_window_inference(
                 inputs=val_inputs,
                 roi_size=(args.x, args.y, args.z),
