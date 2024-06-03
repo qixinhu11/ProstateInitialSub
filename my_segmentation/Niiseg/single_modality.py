@@ -2,7 +2,7 @@ import os, torch
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from monai.losses import DiceCELoss
 from tensorboardX import SummaryWriter
-from monai.data import Dataset, DataLoader,CacheDataset, SmartCacheDataset
+from monai.data import Dataset, DataLoader, SmartCacheDataset
 from monai.networks.nets import SegResNet
 from monai.transforms import (
     Compose,
@@ -65,12 +65,12 @@ def _get_loader(args):
                     ratios=[0,1],
                     num_samples=args.num_samples,
                 ),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
+            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=0),
+            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=1),
+            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=2),
             NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
-            RandScaleIntensityd(keys="image", factors=0.1, prob=1.0),
-            RandShiftIntensityd(keys="image", offsets=0.1, prob=1.0),
+            RandScaleIntensityd(keys="image", factors=0.1, prob=0.15),
+            RandShiftIntensityd(keys="image", offsets=0.1, prob=0.15),
             ToTensord(keys=["image", "label"]),
         ]
     )
