@@ -101,7 +101,7 @@ def _get_loader(args):
     train_ds = SmartCacheDataset(
                 data=train_samples,
                 transform=train_transform,
-                cache_num=4,
+                cache_num=50,
                 cache_rate=1.0,
                 num_init_workers=2,
                 num_replace_workers=2
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_samples', default=2, type=int)
 
     parser.add_argument('--max_epoch', default=2000, type=int)
-    parser.add_argument('--eval_every', default=10, type=int)
+    parser.add_argument('--eval_every', default=50, type=int)
     parser.add_argument('--warmup_epoch', default=50, type=int)
 
     # new args

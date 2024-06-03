@@ -68,7 +68,7 @@ def validation(args, test_loader, model):
             val_outputs = sliding_window_inference(
                 inputs=val_inputs,
                 roi_size=(args.x, args.y, args.z),
-                sw_batch_size=1,
+                sw_batch_size=2,
                 predictor=model,
                 overlap=0.1,
             )
