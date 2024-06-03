@@ -35,7 +35,7 @@ def _get_loader(args):
             train_samples.append(sample)
 
     test_samples = []
-    with open('./test_case_level.txt', 'r') as f:
+    with open('./cspca_test.txt', 'r') as f:
         lines = f.readlines()
         for name in lines:
             name = name.strip()
