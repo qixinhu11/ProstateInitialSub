@@ -2,7 +2,7 @@ import os, torch
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from monai.losses import DiceCELoss
 from tensorboardX import SummaryWriter
-from monai.data import Dataset, DataLoader,CacheDataset
+from monai.data import Dataset, DataLoader,CacheDataset, SmartCacheDataset
 from monai.networks.nets import SegResNet
 from monai.transforms import (
     Compose,
@@ -91,13 +91,21 @@ def _get_loader(args):
             ToTensord(keys=["image", "label"]),
         ]
     )
-    train_ds = CacheDataset(
-                    data=train_samples,
-                    transform=train_transform,
-                    cache_num=50,
-                    cache_rate=1.0,
-                    num_workers=4,
-                )
+    # train_ds = CacheDataset(
+    #                 data=train_samples,
+    #                 transform=train_transform,
+    #                 cache_num=50,
+    #                 cache_rate=1.0,
+    #                 num_workers=4,
+    #             )
+    train_ds = SmartCacheDataset(
+                data=train_samples,
+                transform=train_transform,
+                cache_num=4,
+                cache_rate=1.0,
+                num_init_workers=2,
+                num_replace_workers=2
+            )
     # train_ds = Dataset(data=train_samples, transform=train_transform)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
