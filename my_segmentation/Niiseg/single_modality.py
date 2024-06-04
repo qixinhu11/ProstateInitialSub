@@ -87,7 +87,7 @@ def _get_loader(args):
     train_ds = SmartCacheDataset(
                 data=train_samples,
                 transform=train_transform,
-                cache_num=4,
+                cache_num=60,
                 replace_rate=0.6,
                 num_init_workers=2,
                 num_replace_workers=2
