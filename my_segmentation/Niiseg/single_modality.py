@@ -1,6 +1,6 @@
 import os, torch
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
-from monai.losses import DiceCELoss
+from monai.losses import DiceCELoss, DiceLoss
 from tensorboardX import SummaryWriter
 from monai.data import Dataset, DataLoader, SmartCacheDataset
 from monai.networks.nets import SegResNet
@@ -19,6 +19,7 @@ from monai.transforms import (
     SpatialPadd,
     RandCropByLabelClassesd,
     RandSpatialCropd,
+    RandSpatialCropSamplesd
 )
 from utils import ConvertLabelBasedOnClasses
 from trainer import trainer
@@ -58,14 +59,8 @@ def _get_loader(args):
                 mode=("bilinear", "nearest"),
             ),
             NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
-            RandCropByLabelClassesd(
-                    keys=["image", "label"],
-                    label_key="label",
-                    spatial_size=[args.x, args.y, args.z],
-                    num_classes=2,
-                    ratios=[1,3],
-                    num_samples=args.num_samples,
-                ),
+            SpatialPadd(keys=["image", "label"], mode=["minimum", "constant"], spatial_size=[args.x, args.y, args.z]),
+            RandSpatialCropSamplesd(keys=["image", "label"], roi_size=[args.x, args.y, args.z], num_samples=2, random_size=False),
             RandScaleIntensityd(keys="image", factors=0.1, prob=0.15),
             RandShiftIntensityd(keys="image", offsets=0.1, prob=0.15),
             ToTensord(keys=["image", "label"]),
@@ -92,7 +87,7 @@ def _get_loader(args):
     train_ds = SmartCacheDataset(
                 data=train_samples,
                 transform=train_transform,
-                cache_num=60,
+                cache_num=4,
                 replace_rate=0.6,
                 num_init_workers=2,
                 num_replace_workers=2
@@ -117,15 +112,16 @@ def main(args):
         blocks_up=[1, 1, 1],
         init_filters=16,
         in_channels=1,
-        out_channels=2,
-        dropout_prob=0.2,
+        out_channels=1,
+        dropout_prob=0.1,
     )
     model.to(args.device)
     print("The model is now on the CUDA: ", next(model.parameters()).is_cuda)
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     torch.backends.cudnn.benchmark = True
-    loss_function = DiceCELoss(to_onehot_y=True,sigmoid=True)
+    # loss_function = DiceCELoss(to_onehot_y=True,sigmoid=True)
+    loss_function = DiceLoss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-5)
     scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=args.warmup_epoch, max_epochs=args.max_epoch)
     train_loader, test_loader = _get_loader(args)
@@ -158,7 +154,7 @@ if __name__ == "__main__":
     # new args
     parser.add_argument('--modality', default="T2W", type=str)
 
-    parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/qixin/SEG", type=str)
+    parser.add_argument('--file_root', default="/Users/qixinhu/Project/CUHK/Prostate/PAIsData/0426/tiantian", type=str)
     parser.add_argument('--x', default=96, type=int)
     parser.add_argument('--y', default=96, type=int)
     parser.add_argument('--z', default=32, type=int)
