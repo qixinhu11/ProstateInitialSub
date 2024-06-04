@@ -57,6 +57,7 @@ def _get_loader(args):
                 pixdim=(1.0, 1.0, 1.0),
                 mode=("bilinear", "nearest"),
             ),
+            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             RandCropByLabelClassesd(
                     keys=["image", "label"],
                     label_key="label",
@@ -65,7 +66,6 @@ def _get_loader(args):
                     ratios=[1,3],
                     num_samples=args.num_samples,
                 ),
-            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             RandScaleIntensityd(keys="image", factors=0.1, prob=0.15),
             RandShiftIntensityd(keys="image", offsets=0.1, prob=0.15),
             ToTensord(keys=["image", "label"]),
