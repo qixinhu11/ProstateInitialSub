@@ -18,6 +18,7 @@ from monai.transforms import (
     ToTensord,
     SpatialPadd,
     RandCropByLabelClassesd,
+    RandSpatialCropd,
 )
 from utils import ConvertLabelBasedOnClasses
 from trainer import trainer
@@ -50,25 +51,20 @@ def _get_loader(args):
             EnsureTyped(keys=["image", "label"]),
             ConvertLabelBasedOnClasses(keys="label"),
             EnsureChannelFirstd(keys=["image", "label"]),
-            # Orientationd(keys=["image", "label"], axcodes="RAS"),
             Orientationd(keys=["image", "label"], axcodes="PLS"),
             Spacingd(
                 keys=["image", "label"],
                 pixdim=(1.0, 1.0, 1.0),
                 mode=("bilinear", "nearest"),
             ),
-            SpatialPadd(keys=["image", "label"], mode=["minimum", "constant"], spatial_size=[args.x, args.y, args.z]),
             RandCropByLabelClassesd(
                     keys=["image", "label"],
                     label_key="label",
                     spatial_size=[args.x, args.y, args.z],
                     num_classes=2,
-                    ratios=[0,1],
+                    ratios=[1,3],
                     num_samples=args.num_samples,
                 ),
-            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=0),
-            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=1),
-            RandFlipd(keys=["image", "label"], prob=0.1, spatial_axis=2),
             NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             RandScaleIntensityd(keys="image", factors=0.1, prob=0.15),
             RandShiftIntensityd(keys="image", offsets=0.1, prob=0.15),
@@ -82,7 +78,6 @@ def _get_loader(args):
             EnsureTyped(keys=["image", "label"]),
             ConvertLabelBasedOnClasses(keys="label"),
             EnsureChannelFirstd(keys=["image", "label"]),
-            # Orientationd(keys=["image", "label"], axcodes="RAS"),
             Orientationd(keys=["image", "label"], axcodes="PLS"),
             Spacingd(
                 keys=["image", "label"],
@@ -93,18 +88,12 @@ def _get_loader(args):
             ToTensord(keys=["image", "label"]),
         ]
     )
-    # train_ds = CacheDataset(
-    #                 data=train_samples,
-    #                 transform=train_transform,
-    #                 cache_num=50,
-    #                 cache_rate=1.0,
-    #                 num_workers=4,
-    #             )
+
     train_ds = SmartCacheDataset(
                 data=train_samples,
                 transform=train_transform,
                 cache_num=60,
-                replace_rate=0.5,
+                replace_rate=0.6,
                 num_init_workers=2,
                 num_replace_workers=2
             )
@@ -112,7 +101,7 @@ def _get_loader(args):
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     test_ds = Dataset(data=test_samples, transform=test_transform)
-    test_loader = DataLoader(test_ds, batch_size=1, shuffle=False,num_workers=0, pin_memory=True)
+    test_loader = DataLoader(test_ds, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
 
     return train_loader, test_loader
 
