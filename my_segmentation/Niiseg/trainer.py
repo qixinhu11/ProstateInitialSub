@@ -74,7 +74,7 @@ def validation(args, test_loader, model):
             )
             val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
 
-            val_outputs = val_outputs[0][1]
+            val_outputs = val_outputs[0][0]
             val_labels  = val_labels[0][0]
             dice, _, _ = dice_score(val_outputs, val_labels)
 
